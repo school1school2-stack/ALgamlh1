@@ -33,6 +33,14 @@
         .hidden { display: none !important; }
         input { width: 80%; padding: 15px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 15px; text-align: center; font-size: 1.1rem; }
 
+        /* تنسيقات صفحة المراجعة والتغذية الراجعة */
+        .review-container { text-align: right; margin-top: 25px; max-height: 450px; overflow-y: auto; padding: 10px; border: 1px solid #eee; border-radius: 10px; background: #fafafa; }
+        .review-item { padding: 15px; margin-bottom: 15px; border-radius: 8px; border-right: 6px solid #ccc; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.03); }
+        .review-item.correct-ans { border-right-color: var(--correct); }
+        .review-item.wrong-ans { border-right-color: var(--wrong); }
+        .review-q { font-weight: bold; font-size: 1.1rem; color: #2c3e50; margin-bottom: 8px; }
+        .review-details { font-size: 0.95rem; line-height: 1.6; }
+
         @media (max-width: 600px) {
             body { padding: 10px; }
             .quiz-card { padding: 20px 15px; border-top-width: 8px; }
@@ -83,8 +91,15 @@
 
     <div id="result-page" class="hidden" style="text-align: center;">
         <h2 id="final-greeting"></h2>
-        <div style="font-size: 5rem; font-weight: bold; margin: 25px 0; color: var(--main-color);" id="score-text"></div>
-        <button class="btn" onclick="location.reload()">خروج</button>
+        <div style="font-size: 3rem; font-weight: bold; margin: 15px 0; color: var(--main-color);" id="score-text"></div>
+        
+        <!-- قسم ملخص الإجابات والتغذية الراجعة -->
+        <div style="text-align: right; font-weight: bold; margin-bottom: 5px; color: #2c3e50;">📊 ملخص إجاباتك وتغذية راجعة:</div>
+        <div id="review-list" class="review-container"></div>
+
+        <div style="margin-top: 20px;">
+            <button class="btn" onclick="location.reload()">خروج</button>
+        </div>
     </div>
 </div>
 
@@ -257,7 +272,29 @@
         document.getElementById('result-page').classList.remove('hidden');
         document.getElementById('final-greeting').innerHTML = `جهدك اليوم محل تقدير، وبإصرار وعزيمة ستصل لمستوى أعلى في المرة المقبلة <br> يا (${sName}) 💐💐 ثانوية الأمير عبدالمجيد 👨‍🎓`;
 
-        document.getElementById('score-text').innerText = `${userScore} / ${finalQuestions.length}`;
+        document.getElementById('score-text').innerText = `النتيجة النهائية: ${userScore} / ${finalQuestions.length}`;
+        
+        // توليد وتعبئة قائمة المراجعة والتغذية الراجعة
+        const reviewListContainer = document.getElementById('review-list');
+        reviewListContainer.innerHTML = '';
+
+        studentAnswersLog.forEach((item, index) => {
+            const reviewItem = document.createElement('div');
+            reviewItem.className = `review-item ${item.isCorrect ? 'correct-ans' : 'wrong-ans'}`;
+            
+            let feedbackText = item.isCorrect 
+                ? "✅ أحسنت! إجابتك صحيحة وموفقة." 
+                : `❌ إجابتك خاطئة. الإجابة الصحيحة هي: (${item.correctAns})`;
+
+            reviewItem.innerHTML = `
+                <div class="review-q">السؤال ${index + 1}: ${item.qText}</div>
+                <div class="review-details">
+                    <div>إجابتك: <strong>${item.studentAns}</strong></div>
+                    <div style="margin-top: 5px; color: ${item.isCorrect ? '#27ae60' : '#e74c3c'};"><strong>التغذية الراجعة:</strong> ${feedbackText}</div>
+                </div>
+            `;
+            reviewListContainer.appendChild(reviewItem);
+        });
         
         await db.collection("alkfaeat_results").add({ 
             name: sName, 
